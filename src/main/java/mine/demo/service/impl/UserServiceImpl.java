@@ -12,7 +12,7 @@ import mine.demo.service.IUserService;
 
 @Service("userService")
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Exception.class) 
-public class UserService implements IUserService {
+public class UserServiceImpl implements IUserService {
 
 	@Resource
 	private IUserDao userDao;

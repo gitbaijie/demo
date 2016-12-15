@@ -3,13 +3,13 @@ package mine.demo.service.impl;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
@@ -23,11 +23,12 @@ import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import mine.demo.service.IUrlService;
+import sun.swing.StringUIClientPropertyKey;
 
 @Service("excelService")
-public class UrlService implements IUrlService {
+public class UrlServiceImpl implements IUrlService {
 
-	private static Logger logger = Logger.getLogger(UrlService.class);
+	private static Logger logger = Logger.getLogger(UrlServiceImpl.class);
 
 	private String key = "baidu"; // 关键字
 
@@ -67,9 +68,13 @@ public class UrlService implements IUrlService {
 			for (int i = 0; i < rsRows; i++) {
 				for (int j = 0; j < rsColumns; j++) {
 					Cell cell = readsheet.getCell(j, i);
-					list.add(cell.getContents());
+					String content = cell.getContents();
+					if (!content.isEmpty()) {
+						list.add(cell.getContents());
+					}
 				}
 			}
+			logger.info("============== 导入" + list.size() + "条数据");
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -100,7 +105,7 @@ public class UrlService implements IUrlService {
 					sb.append(str);
 				}
 				String result = sb.toString();
-				logger.info(result);
+//				logger.info(result);
 				write(result, urlStr);
 			} else {
 				delCount++;
@@ -147,9 +152,20 @@ public class UrlService implements IUrlService {
 			nothaskeycount++;
 		}
 	}
+	
+	/**
+	 * 删除记录文件。执行search时重新创建
+	 */
+	private void delFile() {
+		new File(delFileName).delete();
+		new File(haskeyFileName).delete();
+		new File(nothaskeyFileName).delete();
+	}
 
 	@Override
 	public void searchUrl() throws Exception {
+		Date sDate = new Date();
+		delFile(); // 删除记录文件
 		List<String> urls = getUrl();
 		for (int i = 0; i < urls.size(); i++) {
 			String url = urls.get(i);
@@ -157,8 +173,10 @@ public class UrlService implements IUrlService {
 			logger.info("==================访问url：" + url);
 			getReturnData(url);
 		}
+		Date eDate = new Date();
+		long time = (eDate.getTime() - sDate.getTime()) / 1000;
 		logger.info(
-				"@@@@@@@@@  操作结果，删除链接数量：" + delCount + ", 有关键字链接数量：" + haskeycount + "，没有关键字链接数量：" + nothaskeycount);
+				"@@@@@@@@@  操作结果，删除链接数量：" + delCount + ", 有关键字链接数量：" + haskeycount + "，没有关键字链接数量：" + nothaskeycount + " 用时" + time + "秒");
 	}
 
 }
