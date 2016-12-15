@@ -27,7 +27,7 @@ public class TestMyBatis {
 //		userService = (IUserService) ac.getBean("userService");
 //	}
 
-//	@Test
+	@Test
 	public void test1() {
 		User user = userService.getUserById(1);
 		// System.out.println(user.getUserName());
@@ -35,7 +35,7 @@ public class TestMyBatis {
 		logger.info(JSON.toJSONString(user));
 	}
 	
-	@Test
+//	@Test
 	public void test2() {
 		User record = new User();
 		record.setAge(27);
