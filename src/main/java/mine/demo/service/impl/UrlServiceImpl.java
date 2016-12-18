@@ -1,182 +1,215 @@
 package mine.demo.service.impl;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Service;
 
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 import mine.demo.service.IUrlService;
-import sun.swing.StringUIClientPropertyKey;
+
+import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
 
 @Service("excelService")
 public class UrlServiceImpl implements IUrlService {
 
 	private static Logger logger = Logger.getLogger(UrlServiceImpl.class);
 
-	private String key = "baidu"; // 关键字
+	private String key = "kanekalon"; // 关键字
 
 	private int delCount = 0; // 删除数量
 
-	private int haskeycount = 0; // 有关键字数量
+	private int content_haskeycount = 0; // 内容有关键字数量
 
-	private int nothaskeycount = 0; // 没有关键字数量
+	private int link_haskeycount = 0; // 链接有关键字数量
 
-	private String excelFileName = "C:/Users/hh/Desktop/12.15/url.xls"; // url
-																		// Excel文件
+	private int not_haskeycount = 0; // 没有关键字数量
 
-	private String delFileName = "C:/Users/hh/Desktop/12.15/del.txt"; // 保存删除链接文件
+	private String excelFileName = "C:/Users/Administrator/Desktop/12.18/url.xls"; // url
+																					// Excel文件
+	private String DEL_TXT = "Deleted";
 
-	private String haskeyFileName = "C:/Users/hh/Desktop/12.15/haskey.txt"; // 有关键字链接保存文件
+	private String CONTENT_HAS_TXT = "Not Deleted";
 
-	private String nothaskeyFileName = "C:/Users/hh/Desktop/12.15/nothaskey.txt"; // 没有关键字链接保存文件
+	private String LINK_HAS_TXT = "Not Deleted/Kanekalon in url";
 
-	private List<String> getUrl() {
+	private String NOT_HAS_TXT = "Removed";
+
+	private void getUrl() throws WriteException, IOException {
 		jxl.Workbook readwb = null;
-		List<String> list = new ArrayList<String>();
+		WritableWorkbook wwb = null;
 		try {
 			// 构建Workbook对象, 只读Workbook对象
 			// 直接从本地文件创建Workbook
 			InputStream instream = new FileInputStream(excelFileName);
 			readwb = Workbook.getWorkbook(instream);
+			wwb = Workbook.createWorkbook(new File(excelFileName), readwb);
 
 			// Sheet的下标是从0开始
 			// 获取第一张Sheet表
 			Sheet readsheet = readwb.getSheet(0);
-			// 获取Sheet表中所包含的总列数
-			int rsColumns = readsheet.getColumns();
+			WritableSheet ws = wwb.getSheet(0);
+			// 读取第一张工作表
 			// 获取Sheet表中所包含的总行数
 			int rsRows = readsheet.getRows();
-			// 获取指定单元格的对象引用
-
+			logger.info("================ 导入 " + rsRows + " ===============");
 			for (int i = 0; i < rsRows; i++) {
-				for (int j = 0; j < rsColumns; j++) {
-					Cell cell = readsheet.getCell(j, i);
-					String content = cell.getContents();
-					if (!content.isEmpty()) {
-						list.add(cell.getContents());
-					}
+				Thread.sleep(1 * 1000); // 休息2秒
+				Cell cell = readsheet.getCell(0, i);
+				String url = cell.getContents();
+				if (!url.isEmpty()) {
+					writeCell(ws, i, url);
 				}
 			}
-			logger.info("============== 导入" + list.size() + "条数据");
+			wwb.write();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.debug(e);
 		} finally {
 			readwb.close();
-		}
-		return list;
-	}
-
-	private void getReturnData(String urlStr) throws Exception {
-		/** 网络的url地址 */
-		URL url = null;
-		/** http连接 */
-		/**//** 输入流 */
-		BufferedReader in = null;
-		StringBuffer sb = new StringBuffer();
-		try {
-			int status = 0;
-			HttpClient httpClient = new DefaultHttpClient();
-			HttpGet httpGet = new HttpGet(urlStr);
-			HttpResponse loginResponse = httpClient.execute(httpGet);
-			status = loginResponse.getStatusLine().getStatusCode();
-			logger.info("=========== url " + urlStr + " 调用结果： " + status);
-			if (status == 200) {
-				url = new URL(urlStr);
-				in = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
-				String str = null;
-				while ((str = in.readLine()) != null) {
-					sb.append(str);
-				}
-				String result = sb.toString();
-//				logger.info(result);
-				write(result, urlStr);
-			} else {
-				delCount++;
-				writeTxtFile(urlStr, new File(delFileName));
-			}
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			logger.debug("send url failed: " + urlStr);
-		} finally {
-			try {
-				if (in != null) {
-					in.close();
-				}
-			} catch (IOException ex) {
-			}
-		}
-		String result = sb.toString();
-		logger.info(result);
-	}
-
-	private void writeTxtFile(String content, File fileName) {
-		try {
-			content += "\n";
-			// 打开一个随机访问文件流，按读写方式
-			RandomAccessFile randomFile = new RandomAccessFile(fileName, "rw");
-			// 文件长度，字节数
-			long fileLength = randomFile.length();
-			// 将写文件指针移到文件尾。
-			randomFile.seek(fileLength);
-			randomFile.writeBytes(content);
-			randomFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+			wwb.close();
 		}
 	}
 
-	private void write(String result, String url) throws Exception {
-		if (result.indexOf(key) > -1) {
-			haskeycount++;
-			writeTxtFile(url, new File(haskeyFileName));
-		} else {
-			writeTxtFile(url, new File(nothaskeyFileName));
-			nothaskeycount++;
-		}
-	}
-	
 	/**
-	 * 删除记录文件。执行search时重新创建
+	 * 写入Sheet
+	 * 
+	 * @param ws
+	 * @param row
+	 * @param content
+	 * @throws Exception
 	 */
-	private void delFile() {
-		new File(delFileName).delete();
-		new File(haskeyFileName).delete();
-		new File(nothaskeyFileName).delete();
+	private void writeCell(WritableSheet ws, int row, String url)
+			throws Exception {
+		String content = searchUrl(url, row);
+		if (content != null) {
+			Label label = new Label(1, row, content);
+			ws.addCell(label);
+		}
+	}
+
+	/**
+	 * search url
+	 * 
+	 * @param url
+	 * @param row
+	 * @return
+	 * @throws Exception
+	 */
+	private String searchUrl(String url, int row) throws Exception {
+		Document doc;
+		try {
+			doc = Jsoup.connect(url).get();
+			logger.info("=========== " + (row + 1) + " url " + url);
+			if (isDel(doc)) {
+				// 删除
+				logger.info("============== " + url + " 删除");
+				delCount++;
+				return DEL_TXT;
+			} else {
+				// 未删除
+				if (isHasKeyOfContent(doc)) {
+					// 内容有key
+					logger.info("============== " + url + " 内容关键字");
+					content_haskeycount++;
+					return CONTENT_HAS_TXT;
+				} else if (isHasKeyOfLink(doc, url)) {
+					// 链接有key
+					logger.info("============== " + url + " 链接关键字");
+					link_haskeycount++;
+					return LINK_HAS_TXT;
+				} else {
+					// 没有key
+					logger.info("============== " + url + " 其他产品");
+					not_haskeycount++;
+					return NOT_HAS_TXT;
+				}
+			}
+		} catch (Exception e) {
+			logger.debug(e);
+			logger.debug("send url failed: " + url);
+			return null;
+		}
+	}
+
+	/**
+	 * 判断内容里是否有关键字
+	 * 
+	 * @param doc
+	 * @return
+	 */
+	private boolean isHasKeyOfContent(Document doc) {
+		// 内容要排除a标签
+		Elements ListDiv = doc.getElementsByTag("div");
+		for (Element element : ListDiv) {
+			Elements links = element.getElementsByTag("a");
+			for (Element link : links) {
+				link.remove();
+			}
+			String context = element.text().toLowerCase();
+			if (context.indexOf(key) > -1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断链接里是否有关键字
+	 * 
+	 * @param doc
+	 * @return
+	 * @throws IOException 
+	 */
+	private boolean isHasKeyOfLink(Document doc, String url) throws IOException {
+		doc = Jsoup.connect(url).get(); // 上一步已删除a标签，现在需要重新加载url
+		Elements links = doc.getElementsByTag("a");
+		for (Element link : links) {
+			String linkTitle = link.attr("title").toLowerCase();
+			String linkText = link.text().toLowerCase();
+			if (linkTitle.indexOf(key) > -1 || linkText.indexOf(key) > -1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 是否被删除
+	 * 
+	 * @param doc
+	 * @return
+	 */
+	private boolean isDel(Document doc) {
+		Elements element = doc.getElementsByAttributeValue("class", "num");
+		if (element.isEmpty()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@Override
 	public void searchUrl() throws Exception {
 		Date sDate = new Date();
-		delFile(); // 删除记录文件
-		List<String> urls = getUrl();
-		for (int i = 0; i < urls.size(); i++) {
-			String url = urls.get(i);
-			logger.info("#################### 第" + (i + 1) + "个链接");
-			logger.info("==================访问url：" + url);
-			getReturnData(url);
-		}
+		// delFile(); // 删除记录文件
+		getUrl();
 		Date eDate = new Date();
 		long time = (eDate.getTime() - sDate.getTime()) / 1000;
-		logger.info(
-				"@@@@@@@@@  操作结果，删除链接数量：" + delCount + ", 有关键字链接数量：" + haskeycount + "，没有关键字链接数量：" + nothaskeycount + " 用时" + time + "秒");
+		logger.info("##########  操作结果，删除url数量：" + delCount + ", 内容有关键字url数量："
+				+ content_haskeycount + ", 链接有关键字url数量：" + link_haskeycount
+				+ "，没有关键字url数量：" + not_haskeycount + " 用时" + time + "秒");
 	}
 
 }
