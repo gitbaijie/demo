@@ -6,6 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
+
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
@@ -14,13 +21,6 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import mine.demo.service.IUrlService;
-
-import org.apache.log4j.Logger;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.stereotype.Service;
 
 @Service("excelService")
 public class UrlServiceImpl implements IUrlService {
@@ -37,8 +37,10 @@ public class UrlServiceImpl implements IUrlService {
 
 	private int not_haskeycount = 0; // 没有关键字数量
 
-	private String excelFileName = "C:/Users/Administrator/Desktop/12.18/url.xls"; // url
-																					// Excel文件
+	private int error_404count = 0; // 页面不存在数量
+
+	private String excelFileName = "C:/Users/hh/Desktop/11.22/url.xls"; // url
+																		// Excel文件
 	private String DEL_TXT = "Deleted";
 
 	private String CONTENT_HAS_TXT = "Not Deleted";
@@ -46,6 +48,8 @@ public class UrlServiceImpl implements IUrlService {
 	private String LINK_HAS_TXT = "Not Deleted/Kanekalon in url";
 
 	private String NOT_HAS_TXT = "Removed";
+
+	private String ERROR404_TXT = "404"; // 页面不存在
 
 	private void getUrl() throws WriteException, IOException {
 		jxl.Workbook readwb = null;
@@ -90,8 +94,7 @@ public class UrlServiceImpl implements IUrlService {
 	 * @param content
 	 * @throws Exception
 	 */
-	private void writeCell(WritableSheet ws, int row, String url)
-			throws Exception {
+	private void writeCell(WritableSheet ws, int row, String url) throws Exception {
 		String content = searchUrl(url, row);
 		if (content != null) {
 			Label label = new Label(1, row, content);
@@ -139,7 +142,8 @@ public class UrlServiceImpl implements IUrlService {
 		} catch (Exception e) {
 			logger.debug(e);
 			logger.debug("send url failed: " + url);
-			return null;
+			error_404count++;
+			return ERROR404_TXT;
 		}
 	}
 
@@ -170,7 +174,7 @@ public class UrlServiceImpl implements IUrlService {
 	 * 
 	 * @param doc
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	private boolean isHasKeyOfLink(Document doc, String url) throws IOException {
 		doc = Jsoup.connect(url).get(); // 上一步已删除a标签，现在需要重新加载url
@@ -207,9 +211,9 @@ public class UrlServiceImpl implements IUrlService {
 		getUrl();
 		Date eDate = new Date();
 		long time = (eDate.getTime() - sDate.getTime()) / 1000;
-		logger.info("##########  操作结果，删除url数量：" + delCount + ", 内容有关键字url数量："
-				+ content_haskeycount + ", 链接有关键字url数量：" + link_haskeycount
-				+ "，没有关键字url数量：" + not_haskeycount + " 用时" + time + "秒");
+		logger.info("##########  操作结果，删除url数量：" + delCount + ", 内容有关键字url数量：" + content_haskeycount + ", 链接有关键字url数量："
+				+ link_haskeycount + "，没有关键字url数量：" + not_haskeycount + "，页面不存在数量：" + error_404count + " 用时" + time
+				+ "秒");
 	}
 
 }
