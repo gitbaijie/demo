@@ -3,7 +3,7 @@ package mine.demo.pojo;
 public class UrlInfo {
 
 	/** 序号 */
-	private String num;
+	private Integer num;
 
 	/** url */
 	private String url;
@@ -20,7 +20,7 @@ public class UrlInfo {
 	/** 金额 */
 	private String price;
 
-	public UrlInfo(String num, String url, String proName, String comName,
+	public UrlInfo(Integer num, String url, String proName, String comName,
 			String oriplace, String price) {
 		super();
 		this.num = num;
@@ -34,11 +34,11 @@ public class UrlInfo {
 	public UrlInfo() {
 	}
 
-	public String getNum() {
+	public Integer getNum() {
 		return num;
 	}
 
-	public void setNum(String num) {
+	public void setNum(Integer num) {
 		this.num = num;
 	}
 

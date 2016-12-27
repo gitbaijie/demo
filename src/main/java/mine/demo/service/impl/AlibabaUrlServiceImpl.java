@@ -32,11 +32,11 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 1; // 总页数
+	private int pages = 56; // 总页数
 
 	private String searchName = "elemax"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/12.27/url.xls"; // url
+	private String excelFileName = "C:/Users/Administrator/Desktop/12.26/elemax.xls"; // url
 
 	private int row = 1; // 行
 
@@ -61,18 +61,18 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 				String url = baseurl + i + ".html";
 				logger.info("=================== 第" + i + "页");
 				List<UrlInfo> list = searchList(url);
+				System.out.println(list);
 				for (int j = 0; j < list.size(); j++) {
 					UrlInfo obj = list.get(j);
 					int col = 0;
-					sheet.addCell(new Label(col++, row, obj.getNum()));
+					int row = obj.getNum();
+					sheet.addCell(new Label(col++, row, obj.getNum()+""));
 					sheet.addCell(new Label(col++, row, obj.getUrl()));
 					sheet.addCell(new Label(col++, row, obj.getProName()));
 					sheet.addCell(new Label(col++, row, obj.getComName()));
 					sheet.addCell(new Label(col++, row, obj.getOriplace()));
 					sheet.addCell(new Label(col++, row, obj.getPrice()));
 				}
-				// sleep一秒,防止禁IP
-				Thread.sleep(1000);
 			}
 			// 写入数据并关闭文件
 			book.write();
@@ -117,6 +117,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 			for (int i = 0; i < array.size(); i++) {
 				JSONObject json = array.getJSONObject(i);
 				String proUrl = json.getString("productHref");
+				proUrl = "http:" + proUrl;
 				if (proUrl != null && !proUrl.isEmpty()) {
 					UrlInfo obj = new UrlInfo();
 					obj.setUrl(proUrl);
@@ -136,7 +137,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 	 */
 	private void searchPro(UrlInfo obj) throws Exception {
 		Document doc;
-		String url = "http:" + obj.getUrl();
+		String url = obj.getUrl();
 		logger.info("============ " + row + " search pro：" + url);
 		try {
 			doc = Jsoup.connect(url).get();
@@ -150,10 +151,17 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 			obj.setProName(e.text());
 			break;
 		}
+		if (obj.getProName() == null || obj.getProName().equals("")) {
+			elements = doc.getElementsByAttributeValue("class", "ma-title");
+			for (Element e : elements) {
+				obj.setProName(e.text());
+				break;
+			}
+		}
 		// 公司名称
-		elements = doc.getElementsByAttributeValue("class", "company-name");
+		elements = doc.getElementsByAttributeValue("class", "company-name link-default");
 		for (Element e : elements) {
-			obj.setProName(e.text());
+			obj.setComName(e.text());
 			break;
 		}
 		// 原产地
@@ -165,7 +173,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		// 金额
 		searchPrice(doc, obj);
 
-		obj.setNum(row + ""); // 序号
+		obj.setNum(row); // 序号
 		row++;
 		successCount++; // 成功计数
 	}
@@ -174,45 +182,24 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		String priceCurrency = null;
 		String lowPrice = null;
 		String highPrice = null;
-		// 直接写的金额： 128 Piece/Pieces
-		Elements elements = doc.getElementsByAttributeValue("class", "ma-min-order");
-		if (!elements.isEmpty()) {
-			for (Element e : elements) {
-				obj.setPrice(e.text());
-				return;
-			}
-		}
-		
-		// div 里 title <div class="ma-spec-price" title="US $76.00">US $<span class="pre-inquiry-price">76.00</span></div>
-		elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
-		for (Element e : elements) {
-			if (e.attr("title") != null && !e.attr("title").equals("")) {
-				logger.info("============ 区间金额 title");
-				obj.setPrice(e.text());
-				return;
-			}
-		}
-		
+//		// div 里 title <div class="ma-spec-price" title="US $76.00">US $<span class="pre-inquiry-price">76.00</span></div>
+//		Elements elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
+//		for (Element e : elements) {
+//			if (e.attr("title") != null && !e.attr("title").equals("")) {
+//				logger.info("============ 区间金额 title");
+//				obj.setPrice(e.text());
+//				return;
+//			}
+//		}
+//		
 		// 有区间金额： US $97.00				US $95.00
-		elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
+		Elements elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
 		if (!elements.isEmpty()) {
 			logger.info("============ 区间金额");
 			for (Element e : elements) {
-				priceCurrency = e.text();
-				break;
+				obj.setPrice(e.text());
 			}
-		}
-		elements = doc.getElementsByAttributeValue("class", "pre-inquiry-price");
-		if (!elements.isEmpty()) {
-			int n = 0;
-			for (Element e : elements) {
-				if (n == 0) {
-					highPrice = ""; // 只取低金额
-					n++;
-				} else {
-					lowPrice = e.text();
-				}
-			}
+			return;
 		}
 
 		// 没区间金额 US：$15 - 150
@@ -222,25 +209,33 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 				if (e.attr("itemprop").equals("priceCurrency")) {
 					priceCurrency = e.text();
 					if (priceCurrency != null && lowPrice != null && highPrice != null) {
-						break;
+						obj.setPrice(priceCurrency + lowPrice + highPrice);
+						return;
 					}
 				} else if (e.attr("itemprop").equals("lowPrice")) {
 					lowPrice = e.text();
 					if (priceCurrency != null && lowPrice != null && highPrice != null) {
-						break;
+						obj.setPrice(priceCurrency + lowPrice + highPrice);
+						return;
 					}
 				} else if (e.attr("itemprop").equals("highPrice")) {
 					highPrice = e.text();
 					if (priceCurrency != null && lowPrice != null && highPrice != null) {
-						break;
+						obj.setPrice(priceCurrency + lowPrice + " - " + highPrice);
+						return;
 					}
 				}
 			}
 		}
-		if (priceCurrency == null || lowPrice == null || highPrice == null) {
-			throw new Exception("解析span失败");
+		// 直接写的金额： 128 Piece/Pieces
+		elements = doc.getElementsByAttributeValue("class", "ma-min-order");
+		if (!elements.isEmpty()) {
+			for (Element e : elements) {
+				obj.setPrice(e.text());
+				return;
+			}
 		}
-		obj.setPrice(priceCurrency + lowPrice + highPrice);
+		logger.info("============  没有金额");
 	}
 
 	@Override
