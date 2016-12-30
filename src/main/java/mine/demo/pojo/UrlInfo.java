@@ -17,11 +17,13 @@ public class UrlInfo {
 	/** 原产地 */
 	private String oriplace;
 
+	/** 商标 */
+	private String brandName;
+
 	/** 金额 */
 	private String price;
 
-	public UrlInfo(Integer num, String url, String proName, String comName,
-			String oriplace, String price) {
+	public UrlInfo(Integer num, String url, String proName, String comName, String oriplace, String price) {
 		super();
 		this.num = num;
 		this.url = url;
@@ -80,6 +82,14 @@ public class UrlInfo {
 
 	public void setPrice(String price) {
 		this.price = price;
+	}
+
+	public String getBrandName() {
+		return brandName;
+	}
+
+	public void setBrandName(String brandName) {
+		this.brandName = brandName;
 	}
 
 }

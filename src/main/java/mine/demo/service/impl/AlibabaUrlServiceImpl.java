@@ -28,15 +28,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private static Logger logger = Logger.getLogger(IAlibabaUrlService.class);
 
-	private String baseurl = "https://www.alibaba.com/products/F0/elemax/"; // 搜索的基础url
+	private String baseurl = "https://www.alibaba.com/products/F0/SAWAFUJI_generator/"; // 搜索的基础url
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 56; // 总页数
+	private int pages = 2; // 总页数
 
-	private String searchName = "elemax"; // search关键字
+	private String searchName = "SAWAFUJI generator"; // search关键字
 
-	private String excelFileName = "C:/Users/Administrator/Desktop/12.26/elemax.xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/12.27/SAWAFUJI generator.xls"; // url
 
 	private int row = 1; // 行
 
@@ -47,10 +47,10 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 	 */
 	private void exportExcel() {
 		WritableWorkbook book = null;
-		String info[] = { "序号", "url", "产品名称", "公司名称", "原产地", "金额" };
+		String info[] = { "序号", "url", "产品名称", "公司名称", "原产地", "商标", "金额" };
 		try {
 			book = Workbook.createWorkbook(new File(excelFileName));
-			// 生成名为eccif的工作表，参数0表示第一页
+			// 生成名为searchName的工作表，参数0表示第一页
 			WritableSheet sheet = book.createSheet(searchName, 0);
 			// 表头导航
 			for (int i = 0; i < info.length; i++) {
@@ -61,7 +61,6 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 				String url = baseurl + i + ".html";
 				logger.info("=================== 第" + i + "页");
 				List<UrlInfo> list = searchList(url);
-				System.out.println(list);
 				for (int j = 0; j < list.size(); j++) {
 					UrlInfo obj = list.get(j);
 					int col = 0;
@@ -71,6 +70,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 					sheet.addCell(new Label(col++, row, obj.getProName()));
 					sheet.addCell(new Label(col++, row, obj.getComName()));
 					sheet.addCell(new Label(col++, row, obj.getOriplace()));
+					sheet.addCell(new Label(col++, row, obj.getBrandName()));
 					sheet.addCell(new Label(col++, row, obj.getPrice()));
 				}
 			}
@@ -136,6 +136,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 	 * @throws Exception
 	 */
 	private void searchPro(UrlInfo obj) throws Exception {
+		Thread.sleep(1000); // sleep 1.5s 防止被禁
 		Document doc;
 		String url = obj.getUrl();
 		logger.info("============ " + row + " search pro：" + url);
@@ -164,12 +165,19 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 			obj.setComName(e.text());
 			break;
 		}
-		// 原产地
+		// 原产地、商标
 		elements = doc.getElementsByAttributeValue("class", "ellipsis");
+		int n = 0;
 		for (Element e : elements) {
-			obj.setOriplace(e.text());
-			break;
+			if (n == 0) {
+				obj.setOriplace(e.text()); // 原产地
+				n++;
+			} else {
+				obj.setBrandName(e.text()); // 商标
+				break;
+			}
 		}
+		
 		// 金额
 		searchPrice(doc, obj);
 
