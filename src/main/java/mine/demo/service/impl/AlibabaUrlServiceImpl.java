@@ -20,23 +20,20 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-
 @Service("alibabaService")
 public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private static Logger logger = Logger.getLogger(IAlibabaUrlService.class);
 
-	private String baseurl = "https://www.alibaba.com/products/F0/SAWAFUJI_generator/"; // 搜索的基础url
+	private String baseurl = "https://www.alibaba.com/products/F0/elemax/"; // 搜索的基础url
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 2; // 总页数
+	private int pages = 6; // 总页数
 
-	private String searchName = "SAWAFUJI generator"; // search关键字
+	private String searchName = "elemax"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/12.27/SAWAFUJI generator.xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/1.17/" + searchName + ".xls"; // url
 
 	private int row = 1; // 行
 
@@ -65,7 +62,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 					UrlInfo obj = list.get(j);
 					int col = 0;
 					int row = obj.getNum();
-					sheet.addCell(new Label(col++, row, obj.getNum()+""));
+					sheet.addCell(new Label(col++, row, obj.getNum() + ""));
 					sheet.addCell(new Label(col++, row, obj.getUrl()));
 					sheet.addCell(new Label(col++, row, obj.getProName()));
 					sheet.addCell(new Label(col++, row, obj.getComName()));
@@ -111,20 +108,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 			throw new Exception();
 		}
 		String str = doc.data();
-		str = str.split("\"normalList\":")[1].split(",\"featureList\"")[0];
-		JSONArray array = JSONArray.parseArray(str);
-		if (!array.isEmpty()) {
-			for (int i = 0; i < array.size(); i++) {
-				JSONObject json = array.getJSONObject(i);
-				String proUrl = json.getString("productHref");
-				proUrl = "http:" + proUrl;
-				if (proUrl != null && !proUrl.isEmpty()) {
-					UrlInfo obj = new UrlInfo();
-					obj.setUrl(proUrl);
-					searchPro(obj);
-					list.add(obj);
-				}
-			}
+		String[] arr = str.split("productHref\":\"");
+		for (int i = 1; i < arr.length; i++) {
+			String proUrl = arr[i].split("\",")[0];
+			proUrl = proUrl.replace("\\u002f", "/");
+			proUrl = proUrl.replace("\\u002d", "-");
+			UrlInfo obj = new UrlInfo();
+			obj.setUrl("http:" + proUrl);
+			searchPro(obj);
+			list.add(obj);
 		}
 		return list;
 	}
@@ -177,7 +169,7 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 				break;
 			}
 		}
-		
+
 		// 金额
 		searchPrice(doc, obj);
 
@@ -190,17 +182,19 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		String priceCurrency = null;
 		String lowPrice = null;
 		String highPrice = null;
-//		// div 里 title <div class="ma-spec-price" title="US $76.00">US $<span class="pre-inquiry-price">76.00</span></div>
-//		Elements elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
-//		for (Element e : elements) {
-//			if (e.attr("title") != null && !e.attr("title").equals("")) {
-//				logger.info("============ 区间金额 title");
-//				obj.setPrice(e.text());
-//				return;
-//			}
-//		}
-//		
-		// 有区间金额： US $97.00				US $95.00
+		// // div 里 title <div class="ma-spec-price" title="US $76.00">US $<span
+		// class="pre-inquiry-price">76.00</span></div>
+		// Elements elements = doc.getElementsByAttributeValue("class",
+		// "ma-spec-price");
+		// for (Element e : elements) {
+		// if (e.attr("title") != null && !e.attr("title").equals("")) {
+		// logger.info("============ 区间金额 title");
+		// obj.setPrice(e.text());
+		// return;
+		// }
+		// }
+		//
+		// 有区间金额： US $97.00 US $95.00
 		Elements elements = doc.getElementsByAttributeValue("class", "ma-spec-price");
 		if (!elements.isEmpty()) {
 			logger.info("============ 区间金额");
@@ -254,6 +248,10 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		Date eDate = new Date();
 		long time = (eDate.getTime() - sDate.getTime()) / 1000;
 		logger.info("##########  操作结果，search数量：" + successCount + "" + " 用时" + time + "秒");
+	}
+
+	public static void main(String[] args) throws Exception {
+		new AlibabaUrlServiceImpl().searchUrl();
 	}
 
 }

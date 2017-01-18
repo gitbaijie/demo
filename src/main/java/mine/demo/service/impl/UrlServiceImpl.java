@@ -27,7 +27,7 @@ public class UrlServiceImpl implements IUrlService {
 
 	private static Logger logger = Logger.getLogger(UrlServiceImpl.class);
 
-	private String key = "kanekalon"; // 关键字
+	private String key = "elemax"; // 关键字
 
 	private int delCount = 0; // 删除数量
 
@@ -39,15 +39,15 @@ public class UrlServiceImpl implements IUrlService {
 
 	private int error_404count = 0; // 页面不存在数量
 
-	private String excelFileName = "C:/Users/hh/Desktop/11.22/url.xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/1.17/ELEMAX.xls"; // url
 																		// Excel文件
-	private String DEL_TXT = "Deleted";
+	private String DEL_TXT = "Deleted"; // 删除
 
-	private String CONTENT_HAS_TXT = "Not Deleted";
+	private String CONTENT_HAS_TXT = "Not Deleted"; // 内容关键字
 
-	private String LINK_HAS_TXT = "Not Deleted/Kanekalon in url";
+	private String LINK_HAS_TXT = "Not Deleted/Kanekalon in url"; // 链接关键字
 
-	private String NOT_HAS_TXT = "Removed";
+	private String NOT_HAS_TXT = "Removed"; // 其他产品
 
 	private String ERROR404_TXT = "404"; // 页面不存在
 
@@ -70,7 +70,7 @@ public class UrlServiceImpl implements IUrlService {
 			int rsRows = readsheet.getRows();
 			logger.info("================ 导入 " + rsRows + " ===============");
 			for (int i = 0; i < rsRows; i++) {
-				Thread.sleep(1 * 1000); // 休息2秒
+				Thread.sleep(1 * 1000); // 休息1秒
 				Cell cell = readsheet.getCell(0, i);
 				String url = cell.getContents();
 				if (!url.isEmpty()) {
@@ -196,7 +196,7 @@ public class UrlServiceImpl implements IUrlService {
 	 * @return
 	 */
 	private boolean isDel(Document doc) {
-		Elements element = doc.getElementsByAttributeValue("class", "num");
+		Elements element = doc.getElementsByAttributeValue("class", "ma-title-wrap");
 		if (element.isEmpty()) {
 			return true;
 		} else {
@@ -214,6 +214,11 @@ public class UrlServiceImpl implements IUrlService {
 		logger.info("##########  操作结果，删除url数量：" + delCount + ", 内容有关键字url数量：" + content_haskeycount + ", 链接有关键字url数量："
 				+ link_haskeycount + "，没有关键字url数量：" + not_haskeycount + "，页面不存在数量：" + error_404count + " 用时" + time
 				+ "秒");
+	}
+	
+	public static void main(String[] args) throws Exception {
+		IUrlService service = new UrlServiceImpl();
+		service.searchUrl();
 	}
 
 }
