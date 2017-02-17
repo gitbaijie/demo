@@ -39,7 +39,7 @@ public class UrlServiceImpl implements IUrlService {
 
 	private int error_404count = 0; // 页面不存在数量
 
-	private String excelFileName = "C:/Users/hh/Desktop/1.17/ELEMAX.xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/1.19/abc.xls"; // url
 																		// Excel文件
 	private String DEL_TXT = "Deleted"; // 删除
 

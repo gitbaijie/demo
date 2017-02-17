@@ -25,15 +25,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private static Logger logger = Logger.getLogger(IAlibabaUrlService.class);
 
-	private String baseurl = "https://www.alibaba.com/products/F0/elemax/"; // 搜索的基础url
+	private String baseurl = "https://www.alibaba.com/products/F0/kamry_cassiel/"; // 搜索的基础url
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 6; // 总页数
+	private int pages = 1; // 总页数
 
-	private String searchName = "elemax"; // search关键字
+	private String searchName = "kamry cassiel"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/1.17/" + searchName + ".xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/2.16/" + searchName + ".xls"; // url
 
 	private int row = 1; // 行
 
