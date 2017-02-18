@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jxl.Workbook;
 import jxl.write.Label;
@@ -14,7 +16,10 @@ import mine.demo.pojo.UrlInfo;
 import mine.demo.service.IAlibabaUrlService;
 
 import org.apache.log4j.Logger;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.jsoup.Connection.Method;
+import org.jsoup.Connection.Response;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -29,11 +34,11 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 1; // 总页数
+	private int pages = 24; // 总页数
 
 	private String searchName = "kamry cassiel"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/2.16/" + searchName + ".xls"; // url
+	private String excelFileName = "C:/Users/yue06/Desktop/2.17/" + searchName + ".xls"; // url
 
 	private int row = 1; // 行
 
@@ -131,9 +136,16 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		Thread.sleep(1000); // sleep 1.5s 防止被禁
 		Document doc;
 		String url = obj.getUrl();
+		
 		logger.info("============ " + row + " search pro：" + url);
 		try {
-			doc = Jsoup.connect(url).get();
+			Connection con = Jsoup.connect(
+					"http://www.alibaba.com/product-detail/2016-kamry-cigarros-electronicos-vapor-Cassiel_60595723922.html");
+			con.header("User-Agent",
+					"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
+			// 设置cookie和post上面的map数据
+			Response response = con.ignoreContentType(true).method(Method.POST).cookies(getCookie()).execute();
+			doc = response.parse();
 		} catch (IOException e) {
 			logger.debug(" search list 报错：" + url, e);
 			throw new Exception();
@@ -239,8 +251,38 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		}
 		logger.info("============  没有金额");
 	}
+	
+	Map<String, String> getCookie() {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("ali_apache_id", "11.251.145.233.1486290926404.130538.4");
+		map.put("ali_beacon_id", "121.71.50.22.1486290927433.992858.2");
+		map.put("cna", "oq4dEaTXb28CAXlHMhY5YIvI");
+		map.put("t", "f268bfe692a070006bec0c03b7498fca");
+		map.put("_uab_collina", "148724658330570282212876");
+		map.put("history", "product_selloffer%5E%0A60512867458%24%0A60209693219%24%0A60618065670");
+		map.put("gangesweb-buckettest", "121.71.50.22.1486290929013.8");
+		map.put("ali_ab", "121.71.50.22.1486290928749.5");
+		map.put("_umdata", "535523100CBE37C3EE813EA379A6CA8FA3EB9D0892EF0CB79455BCA8FBA16E7A34055F7D9109BBF4CD43AD3E795C914C38A903F3794CA60E63DF901E058B42A1");
+		map.put("acs_usuc_t", "acs_rt=3ce18f4e43f34190847059c90584842f");
+		map.put("v", "0");
+		map.put("cookie2", "1941d019d6b93df57935da1fe0cc4995");
+		map.put("_tb_token_", "5b17709434063");
+		map.put("csg", "ea058ab3");
+		map.put("xman_us_f", "x_l=1&x_locale=en_US&no_popup_today=n&x_user=HK|Nancy|Wang|ifm|230223677&last_popup_time=1487344384767");
+		map.put("xman_us_t", "x_lid=    hk1520143162kbmc&sign=y&x_user=pVCo9dKOubqQVQfFQ59/KTpcIs4w+8eYOHLfFu9fUuw=&ctoken=m883av6s2nsq&need_popup=y&l_source=alibaba");
+		map.put("intl_locale", "en_US");
+		map.put("intl_common_forever", "agSoCGpT8yh1sLNJXdevHRvdiuxeGxAFjJXbipS/3OdwdMrrLES7tA==");
+		map.put("xman_f", "tCn9i1eKfSQqChcKvd41+rEPZ9UR1z/wQmLU0rA1UMFACd4rc7BUAmZ6RRcJDbJZd8ALtqLFrFqb906QxTNXUjhYANCjxgiEGaPeJV6qfKFtgZP5u8agYhPkXRQLbQ9Q4bFCzSxOAGPaIvWD1yAsCUw5rvNm5mD48evx7a2VD/zMcV7OHmQ3DyZLTuoiAtR7OqrCsEnvdjhblLjolFonr1xbez5E7c0mTzFe3Ai4qPjSbS6Po2BgqXR51NtrHK0L1fs7Xj14WsGpvN9gE1p3L5OHyt4PNG7iHKtu3OHjkbLOTByduU34APH0YJo3ZH3nR1OmzGl/rsmym8Z4IM6GDbQDavAr3kLz9L6iRwyYipZtXOL3H0WyIL4i6LVBGdnyEr+J1SWGJiHktTgKtU74zUUpObs0N8m0kGsbauu+IbA=");
+		map.put("JSESSIONID", "PLqE11Rb95wrHDj-wxz5qxER");
+		map.put("l", "AsXFIT4r1HxnsA00-SIpi8CUVQv/gnkU");
+		map.put("isg", "AhYWvZS1UkZn8WbTTwA50ZnNZ8whUVrx7FdArYB_AvmUQ7bd6EeqAXw5rWhV");
+		map.put("xman_t", "zBxKjLW+xwdLSGTLrsvr+btRotCgi3Rr6Pgz8q0emdyEXkTBVoBF2cCHDeKWOlzI/8L3FjqYyavT3DWJU0WA713s9W4aPe7gX/9dmMyaZRrmToQIo+EQBA6B8O1+R+rfbtaENssxLqL3DlMOrhAgKTGEswSHFOMW0zVjeHiCeTQDl3t4EuYR3+qMjRqaXCxXuqfGHAcX/H+jTGFmKUXCMxIdWXs/koE1s5ODy688l+RzI0FITEXXJrTXZHVHqHtgv/lbMY3dcPd8xM7J8XjgR1uWnPSk6La1ZWzslK1GrRRLqkaEohSO1N0TD21dZP2KQG/rjHqfLy+4WKNSxaeBcdATdwst0qIio/IIxkHDCFrHHa+21fmOHbz8t+AP/Ns4gWxNrCMzkOuoqWbVQ+FNhDlZZPTa8xVuHb1dXhW96rvLlIKS6TbERUH0ZVimp5rG8GRRO+aSwXkJyoxgpnfkU7CNoNhuJh3mIiuEWbllwPOgXgXPzbxw7/aAsD6I6IYPOuy/gwj5sqlgtzsBsdPt0cUDf7PEHi5syDHUUItph4IN4OZdGcC1hWj2XmiAa98l5arXmlUw55mlNL0f4qU0CDrzUTsAa4S4aXuqe0GU1Cig6qBrlobVHixHqpP6lPRFNT5iSO6bwiBgFAtiWSkk0tgwTjvYDWTV");
+				map.put("ali_apache_track", "mt=1|mid=hk1520143162kbmc");
+		map.put("ali_apache_tracktmp", "W_signed=Y");
+		map.put("acs_rt", "2682efec27f048a8b81c140ea10c28c0");
+		return map;
+	}
 
-	@Override
 	public void searchUrl() throws Exception {
 		Date sDate = new Date();
 		// delFile(); // 删除记录文件
