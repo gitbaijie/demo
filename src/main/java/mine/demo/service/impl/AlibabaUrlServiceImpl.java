@@ -7,19 +7,21 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.stereotype.Service;
-
 import jxl.Workbook;
 import jxl.write.Label;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import mine.demo.pojo.UrlInfo;
 import mine.demo.service.IAlibabaUrlService;
+import org.apache.log4j.Logger;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.Connection.Method;
+import org.jsoup.Connection.Response;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
 import mine.demo.util.CookieUtil;
 
 @Service("alibabaService")
@@ -31,16 +33,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private int successCount = 0; // 成功的url数量
 
-	private int pages = 1; // 总页数
+	private int pages = 24; // 总页数
 
 	private String searchName = "kamry cassiel"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/2.27/" + searchName + ".xls"; // url
-
+	private String excelFileName = "C:/Users/yue06/Desktop/2.17/" + searchName + ".xls"; // url
 	private int row = 1; // 行
-	
+
 	private Map<String, String> cookies;
-	
+
 	public AlibabaUrlServiceImpl() {
 		cookies = CookieUtil.getCookie();
 	}
@@ -139,16 +140,24 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		Thread.sleep(1000); // sleep 1.5s 防止被禁
 		Document doc;
 		String url = obj.getUrl();
+
 		logger.info("============ " + row + " search pro：" + url);
 		try {
-			doc = Jsoup.connect(url).cookies(cookies).get();
+			Connection con = Jsoup.connect(
+					"http://www.alibaba.com/product-detail/2016-kamry-cigarros-electronicos-vapor-Cassiel_60595723922.html");
+			con.header("User-Agent",
+					"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
+			// 设置cookie和post上面的map数据
+			Response response = con.ignoreContentType(true).method(Method.POST).cookies(CookieUtil.getCookie())
+					.execute();
+			doc = response.parse();
 		} catch (IOException e) {
 			logger.debug(" search list 报错：" + url, e);
 			throw new Exception();
 		}
 		// 处理验证码
 		checkCode(doc);
-		
+
 		// 产品名称
 		Elements elements = doc.getElementsByAttributeValue("class", "ma-title-text");
 		for (Element e : elements) {
@@ -251,18 +260,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		logger.info("============  没有金额");
 	}
 
-	/**  
-	* @Title: checkCode  
-	* @Description: 处理验证码
-	* @param @param doc  
-	* @return void 
-	* @throws  
-	*/  
+	/**
+	 * @Title: checkCode @Description: 处理验证码 @param @param doc @return
+	 * void @throws
+	 */
 	private void checkCode(Document doc) {
 		Element e = doc.getElementById("checkcodeImg");
 		logger.debug("需要输入验证码");
 	}
-	
+
 	public void searchUrl() throws Exception {
 		Date sDate = new Date();
 		// delFile(); // 删除记录文件
