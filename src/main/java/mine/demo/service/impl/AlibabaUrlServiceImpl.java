@@ -5,13 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import jxl.Workbook;
-import jxl.write.Label;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
-import mine.demo.pojo.UrlInfo;
-import mine.demo.service.IAlibabaUrlService;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
@@ -19,6 +13,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+
+import jxl.Workbook;
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import mine.demo.pojo.UrlInfo;
+import mine.demo.service.IAlibabaUrlService;
+import mine.demo.util.CookieUtil;
 
 @Service("alibabaService")
 public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
@@ -33,9 +35,15 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 
 	private String searchName = "kamry cassiel"; // search关键字
 
-	private String excelFileName = "C:/Users/hh/Desktop/2.16/" + searchName + ".xls"; // url
+	private String excelFileName = "C:/Users/hh/Desktop/2.27/" + searchName + ".xls"; // url
 
 	private int row = 1; // 行
+	
+	private Map<String, String> cookies;
+	
+	public AlibabaUrlServiceImpl() {
+		cookies = CookieUtil.getCookie();
+	}
 
 	/**
 	 * 写入excel
@@ -133,11 +141,14 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		String url = obj.getUrl();
 		logger.info("============ " + row + " search pro：" + url);
 		try {
-			doc = Jsoup.connect(url).get();
+			doc = Jsoup.connect(url).cookies(cookies).get();
 		} catch (IOException e) {
 			logger.debug(" search list 报错：" + url, e);
 			throw new Exception();
 		}
+		// 处理验证码
+		checkCode(doc);
+		
 		// 产品名称
 		Elements elements = doc.getElementsByAttributeValue("class", "ma-title-text");
 		for (Element e : elements) {
@@ -240,7 +251,18 @@ public class AlibabaUrlServiceImpl implements IAlibabaUrlService {
 		logger.info("============  没有金额");
 	}
 
-	@Override
+	/**  
+	* @Title: checkCode  
+	* @Description: 处理验证码
+	* @param @param doc  
+	* @return void 
+	* @throws  
+	*/  
+	private void checkCode(Document doc) {
+		Element e = doc.getElementById("checkcodeImg");
+		logger.debug("需要输入验证码");
+	}
+	
 	public void searchUrl() throws Exception {
 		Date sDate = new Date();
 		// delFile(); // 删除记录文件
